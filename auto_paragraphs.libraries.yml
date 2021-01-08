@@ -1,0 +1,6 @@
+node:
+  js:
+    js/auto-paragraphs.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings

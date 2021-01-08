@@ -1,0 +1,166 @@
+<?php
+
+use Drupal\Component\Utility\NestedArray;
+use Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\auto_paragraphs\AutoParagraphs;
+use Drupal\Core\Field\FieldFilteredMarkup;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
+
+/**
+ * Implements hook_form_alter().
+ */
+function auto_paragraphs_form_node_page_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+//  $form['field_type']['widget']['#attached']['library'][] = 'auto_paragraphs/node';
+
+  $paragraphFieldName = 'field_paragraph';
+  $autoParagraphFieldName = 'field_type';
+
+  $paragraphField = NestedArray::getValue($form, [$paragraphFieldName]);
+
+  $autoParagraphField = NestedArray::getValue($form, [$autoParagraphFieldName]);
+
+  $autoParagraphField['auto_paragraphs'] = [
+    '#type' => 'submit',
+    '#name' => 'field_type_audo_paragraph',
+    '#value' => t('Inject Paragraphs'),
+    '#attributes' => ['class' => ['field-auto-paragraphs-selection-submit']],
+    '#limit_validation_errors' => [array_merge($paragraphField['#parents'], [$paragraphFieldName, 'add_more'])],
+    '#submit' => [['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreSubmit']],
+    '#ajax' => [
+      'callback' => ['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreAjax'],
+      'wrapper' => str_replace('_', '-', $paragraphFieldName) . '-add-more-wrapper',
+      'effect' => 'fade',
+      'progress' => [
+        'type' => 'fullscreen',
+      ]
+    ],
+  ];
+  NestedArray::setValue($form, [$autoParagraphFieldName], $autoParagraphField);
+}
+
+/**
+ * Implements hook_field_widget_multivalue_form_alter().
+ */
+function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, FormStateInterface $form_state, array $context)
+{
+  /** @var \Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget $widget */
+  $widget = $context['widget'];
+  if (!$widget instanceof ParagraphsWidget) {
+    return;
+  }
+
+  $form = $context['form'];
+  $items = $context['items'];
+
+  /** @var \Drupal\Core\Field\FieldDefinitionInterface $field_definition */
+  $field_definition = $items->getFieldDefinition();
+  $field_name = $field_definition->getName();
+  $field_parents = $form['#parents'];
+  $widget_state = AutoParagraphs::getWidgetState($field_parents, $field_name, $form_state);
+
+  if (!isset($widget_state['auto_paragraphs'])) {
+    // Auto paragraph field isn't set in the widget.
+    return;
+  }
+
+  $is_multiple = $field_definition->getFieldStorageDefinition()->isMultiple();
+  $cardinality = $field_definition->getFieldStorageDefinition()->getCardinality();
+  $field_title = $field_definition->getLabel();
+  $description = FieldFilteredMarkup::create(\Drupal::token()->replace($field_definition->getDescription()));
+
+  $max = $widget_state['real_item_count'];
+  $entity_type_manager = \Drupal::entityTypeManager();
+  $target_type = $field_definition->getSetting('target_type');
+
+  foreach ($widget_state['auto_paragraphs'] as $key => $type) {
+    $item_values = [
+      'type' => $type,
+    ];
+    $max++;
+    $paragraphs_entity = $entity_type_manager->getStorage($target_type)->create($item_values);
+    $display = EntityFormDisplay::collectRenderDisplay($paragraphs_entity, $field_definition->getSetting('form_display_mode'));
+    $widget_state['paragraphs'][$max - 1] = [
+      'entity' => $paragraphs_entity,
+      'display' => $display,
+      'mode' => 'edit',
+      'original_delta' => $max,
+    ];
+  }
+  $widget_state['items_count'] = $max;
+  $widget_state['real_item_count'] = $max;
+
+  AutoParagraphs::setWidgetState($field_parents, $field_name, $form_state, $widget_state);
+
+  if ($max > 0) {
+    for ($delta = 0; $delta < $max; $delta++) {
+
+      // Add a new empty item if it doesn't exist yet at this delta.
+      if (!isset($items[$delta])) {
+        $items->appendItem();
+      }
+
+      // For multiple fields, title and description are handled by the wrapping
+      // table.
+      $element_base = [
+        '#title' => $is_multiple ? '' : $field_title,
+        '#description' => $is_multiple ? '' : $description,
+        '#paragraphs_bundle' => '',
+      ];
+      $element_base += [
+        '#field_parents' => $form['#parents'],
+        // Only the first widget should be required.
+        '#required' => $delta == 0 && $field_definition->isRequired(),
+        '#delta' => $delta,
+        '#weight' => $delta,
+      ];
+
+      $element = $widget->formElement($items, $delta, $element_base, $form, $form_state);
+
+      if ($element) {
+        // Set paragraphs bundle.
+        $widget_state = AutoParagraphs::getWidgetState($element['#field_parents'], $field_name, $form_state);
+        $element['#paragraphs_bundle'] = $widget_state['paragraphs'][$delta]['entity']->bundle();
+
+        // Allow modules to alter the field widget form element.
+        $context = [
+          'form' => $form,
+          'widget' => $widget,
+          'items' => $items,
+          'delta' => $delta,
+          'default' => (bool)$form_state->get('default_value_widget'),
+        ];
+        \Drupal::moduleHandler()->alter(['field_widget_form', 'field_widget_' . $widget->getPluginId() . '_form'], $element, $form_state, $context);
+
+        // Input field for the delta (drag-n-drop reordering).
+        if ($is_multiple) {
+          // We name the element '_weight' to avoid clashing with elements
+          // defined by widget.
+          $element['_weight'] = array(
+            '#type' => 'weight',
+            '#title' => t('Weight for row @number', array('@number' => $delta + 1)),
+            '#title_display' => 'invisible',
+            // Note: this 'delta' is the FAPI #type 'weight' element's property.
+            '#delta' => $max,
+            '#default_value' => $items[$delta]->_weight ?: $delta,
+            '#weight' => 100,
+          );
+        }
+
+        // Access for the top element is set to FALSE only when the paragraph
+        // was removed. A paragraphs that a user can not edit has access on
+        // lower level.
+        if (isset($element['#access']) && !$element['#access']) {
+          $widget_state['items_count']--;
+        } else {
+          $elements[$delta] = $element;
+        }
+      }
+    }
+  }
+
+  $field_state = AutoParagraphs::getWidgetState($field_parents, $field_name, $form_state);
+  $field_state['real_item_count'] = $field_state['items_count'];
+  $field_state['add_mode'] = $widget->getSetting('add_mode');
+  AutoParagraphs::setWidgetState($field_parents, $field_name, $form_state, $field_state);
+}
