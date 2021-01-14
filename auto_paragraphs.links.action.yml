@@ -1,0 +1,5 @@
+entity.auto_paragraph.add_form:
+  route_name: 'entity.auto_paragraph.add_form'
+  title: 'Add Auto Paragraph'
+  appears_on:
+    - entity.auto_paragraph.collection

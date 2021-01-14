@@ -1,0 +1,29 @@
+auto_paragraphs.settings:*:
+  type: config_entity
+  label: 'Auto Paragraph'
+  mapping:
+    id:
+      type: string
+      label: 'ID'
+    label:
+      type: label
+      label: 'Label'
+    content_type:
+      type: string
+      label: 'Content Type'
+    field:
+      type: string
+      label: 'Field'
+    paragraph_field:
+      type: string
+      label: 'Paragraph Field'
+    options:
+      type: sequence
+      sequence:
+        type: mapping
+        mapping:
+          condition:
+            type: string
+            label: 'Condition'
+          padagraphs:
+            type: sequence

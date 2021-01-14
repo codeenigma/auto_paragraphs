@@ -8,6 +8,11 @@ use Drupal\Tests\paragraphs\FunctionalJavascript\LoginAdminTrait;
 use Drupal\Tests\paragraphs\FunctionalJavascript\ParagraphsTestBaseTrait;
 use Drupal\Tests\paragraphs\Traits\ParagraphsCoreVersionUiTestTrait;
 
+/**
+ * Class AutoParagraphsTest
+ *
+ * @group auto_paragraphs
+ */
 class AutoParagraphsTest extends WebDriverTestBase {
   use LoginAdminTrait;
   use FieldUiTestTrait;

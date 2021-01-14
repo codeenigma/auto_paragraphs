@@ -12,31 +12,55 @@ use Drupal\Core\Entity\Entity\EntityFormDisplay;
  */
 function auto_paragraphs_form_node_page_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
 //  $form['field_type']['widget']['#attached']['library'][] = 'auto_paragraphs/node';
+  $contentEntity = $form_state->getFormObject()->getEntity();
+  $contentType = $contentEntity->getType();
 
-  $paragraphFieldName = 'field_paragraph';
-  $autoParagraphFieldName = 'field_type';
+  $autoParagraphsConfigList = \Drupal::service('entity_type.manager')->getStorage('auto_paragraph')->getQuery()->execute();
+  $autoParagraphsConfigEntities = \Drupal::service('entity_type.manager')->getStorage('auto_paragraph')->loadMultipleOverrideFree($autoParagraphsConfigList);
 
-  $paragraphField = NestedArray::getValue($form, [$paragraphFieldName]);
+  $configs = [];
 
-  $autoParagraphField = NestedArray::getValue($form, [$autoParagraphFieldName]);
+  foreach ($autoParagraphsConfigEntities as $id => $autoParagraph) {
+    if ($autoParagraph->getContentType() == $contentType) {
+      $configs[$id] = $autoParagraph;
+    }
+  }
 
-  $autoParagraphField['auto_paragraphs'] = [
-    '#type' => 'submit',
-    '#name' => 'field_type_audo_paragraph',
-    '#value' => t('Inject Paragraphs'),
-    '#attributes' => ['class' => ['field-auto-paragraphs-selection-submit']],
-    '#limit_validation_errors' => [array_merge($paragraphField['#parents'], [$paragraphFieldName, 'add_more'])],
-    '#submit' => [['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreSubmit']],
-    '#ajax' => [
-      'callback' => ['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreAjax'],
-      'wrapper' => str_replace('_', '-', $paragraphFieldName) . '-add-more-wrapper',
-      'effect' => 'fade',
-      'progress' => [
-        'type' => 'fullscreen',
-      ]
-    ],
-  ];
-  NestedArray::setValue($form, [$autoParagraphFieldName], $autoParagraphField);
+  $configIds = [];
+
+  foreach ($configs as $config) {
+    $paragraphFieldName = $config->getParagraphField();
+    $autoParagraphFieldName = $config->getField();
+
+    $paragraphField = NestedArray::getValue($form, [$paragraphFieldName]);
+
+    $autoParagraphField = NestedArray::getValue($form, [$autoParagraphFieldName]);
+
+    // @todo: check for the field not existing.
+
+    $autoParagraphField['auto_paragraphs'] = [
+      '#type' => 'submit',
+      '#name' => $autoParagraphFieldName . '_auto_paragraph',
+      '#value' => t('Inject Paragraphs'),
+      '#attributes' => ['class' => ['field-auto-paragraphs-selection-submit']],
+      '#limit_validation_errors' => [array_merge($paragraphField['#parents'], [$paragraphFieldName, 'add_more'])],
+      '#submit' => [['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreSubmit']],
+      '#ajax' => [
+        'callback' => ['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreAjax'],
+        'wrapper' => str_replace('_', '-', $paragraphFieldName) . '-add-more-wrapper',
+        'effect' => 'fade',
+        'progress' => [
+          'type' => 'fullscreen',
+        ]
+      ],
+    ];
+    NestedArray::setValue($form, [$autoParagraphFieldName], $autoParagraphField);
+
+    $configIds[] = $config->getId();
+  }
+  $state = $form_state->getStorage();
+  $state['auto_paragraphs_configs'] = $configIds;
+  $form_state->setStorage($state);
 }
 
 /**

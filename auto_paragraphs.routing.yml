@@ -1,0 +1,31 @@
+entity.auto_paragraph.collection:
+  path: '/admin/config/system/auto_paragraphs'
+  defaults:
+    _entity_list: 'auto_paragraph'
+    _title: 'Auto Paragraphs configuration'
+  requirements:
+    _permission: 'administer site configuration'
+
+entity.auto_paragraph.add_form:
+  path: '/admin/config/system/auto_paragraphs/add'
+  defaults:
+    _entity_form: 'auto_paragraph.add'
+    _title: 'Add Auto Paragraph'
+  requirements:
+    _permission: 'administer site configuration'
+
+entity.auto_paragraph.edit_form:
+  path: '/admin/config/system/auto_paragraphs/{auto_paragraph}'
+  defaults:
+    _entity_form: 'auto_paragraph.edit'
+    _title: 'Edit Auto Paragraph'
+  requirements:
+    _permission: 'administer site configuration'
+
+entity.auto_paragraph.delete_form:
+  path: '/admin/config/system/auto_paragraphs/{auto_paragraph}/delete'
+  defaults:
+    _entity_form: 'auto_paragraph.delete'
+    _title: 'Delete Auto Paragraph'
+  requirements:
+    _permission: 'administer site configuration'

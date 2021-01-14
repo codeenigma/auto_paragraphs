@@ -1,0 +1,5 @@
+entity.auto_paragraph.collection:
+  title: 'Auto Paragraphs'
+  parent: system.admin_config_content
+  description: 'Configure auto_paragraphs'
+  route_name: entity.auto_paragraph.collection
