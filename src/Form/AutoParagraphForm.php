@@ -79,6 +79,15 @@ class AutoParagraphForm extends EntityForm {
 
     $autoParagraphEntity = $this->entity;
 
+    if (!$autoParagraphEntity->isNew()) {
+      $form['status'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Status'),
+        '#default_value' => $autoParagraphEntity->status(),
+        '#description' => $this->t("Status."),
+      ];
+    }
+
     $form['label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Label'),

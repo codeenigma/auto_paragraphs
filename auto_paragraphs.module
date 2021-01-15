@@ -25,6 +25,7 @@ function auto_paragraphs_form_node_form_alter(&$form, \Drupal\Core\Form\FormStat
   $autoParagraphsConfigList = \Drupal::service('entity_type.manager')
     ->getStorage('auto_paragraph')
     ->getQuery()
+    ->condition('status', 1, '=')
     ->execute();
   $autoParagraphsConfigEntities = \Drupal::service('entity_type.manager')
     ->getStorage('auto_paragraph')
