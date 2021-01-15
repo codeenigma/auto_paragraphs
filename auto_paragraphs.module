@@ -2,6 +2,7 @@
 
 use Drupal\Component\Utility\NestedArray;
 use Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget;
+use Drupal\paragraphs\Plugin\Field\FieldWidget\InlineParagraphsWidget;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\auto_paragraphs\AutoParagraphs;
 use Drupal\auto_paragraphs\AutoParagraphsAjaxCallback;
@@ -11,7 +12,7 @@ use Drupal\Core\Entity\Entity\EntityFormDisplay;
 /**
  * Implements hook_form_alter().
  */
-function auto_paragraphs_form_node_page_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+function auto_paragraphs_form_node_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
   // @todo : remove the form element from the node page if the node has been created.
   $contentEntity = $form_state->getFormObject()->getEntity();
   if ($contentEntity->isNew() === FALSE) {
@@ -81,7 +82,7 @@ function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, Fo
 {
   /** @var \Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget $widget */
   $widget = $context['widget'];
-  if (!$widget instanceof ParagraphsWidget) {
+  if (!$widget instanceof ParagraphsWidget && !$widget instanceof InlineParagraphsWidget) {
     return;
   }
 
