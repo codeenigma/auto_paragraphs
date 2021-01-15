@@ -9,7 +9,6 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Builds the form to delete an Example.
  */
-
 class AutoParagraphDeleteForm extends EntityConfirmFormBase {
 
   /**

@@ -4,6 +4,7 @@ use Drupal\Component\Utility\NestedArray;
 use Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\auto_paragraphs\AutoParagraphs;
+use Drupal\auto_paragraphs\AutoParagraphsAjaxCallback;
 use Drupal\Core\Field\FieldFilteredMarkup;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 
@@ -11,12 +12,22 @@ use Drupal\Core\Entity\Entity\EntityFormDisplay;
  * Implements hook_form_alter().
  */
 function auto_paragraphs_form_node_page_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
-//  $form['field_type']['widget']['#attached']['library'][] = 'auto_paragraphs/node';
+  // @todo : remove the form element from the node page if the node has been created.
   $contentEntity = $form_state->getFormObject()->getEntity();
+  if ($contentEntity->isNew() === FALSE) {
+    // Don't activate the module if the content type is already created.
+    return;
+  }
   $contentType = $contentEntity->getType();
 
-  $autoParagraphsConfigList = \Drupal::service('entity_type.manager')->getStorage('auto_paragraph')->getQuery()->execute();
-  $autoParagraphsConfigEntities = \Drupal::service('entity_type.manager')->getStorage('auto_paragraph')->loadMultipleOverrideFree($autoParagraphsConfigList);
+  // @todo abstract some of this.
+  $autoParagraphsConfigList = \Drupal::service('entity_type.manager')
+    ->getStorage('auto_paragraph')
+    ->getQuery()
+    ->execute();
+  $autoParagraphsConfigEntities = \Drupal::service('entity_type.manager')
+    ->getStorage('auto_paragraph')
+    ->loadMultipleOverrideFree($autoParagraphsConfigList);
 
   $configs = [];
 
@@ -44,9 +55,9 @@ function auto_paragraphs_form_node_page_form_alter(&$form, \Drupal\Core\Form\For
       '#value' => t('Inject Paragraphs'),
       '#attributes' => ['class' => ['field-auto-paragraphs-selection-submit']],
       '#limit_validation_errors' => [array_merge($paragraphField['#parents'], [$paragraphFieldName, 'add_more'])],
-      '#submit' => [['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreSubmit']],
+      '#submit' => [['\Drupal\auto_paragraphs\AutoParagraphsAjaxCallback', 'addMoreSubmit']],
       '#ajax' => [
-        'callback' => ['\Drupal\auto_paragraphs\AutoParagraphs', 'addMoreAjax'],
+        'callback' => ['\Drupal\auto_paragraphs\AutoParagraphsAjaxCallback', 'addMoreAjax'],
         'wrapper' => str_replace('_', '-', $paragraphFieldName) . '-add-more-wrapper',
         'effect' => 'fade',
         'progress' => [
@@ -81,7 +92,7 @@ function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, Fo
   $field_definition = $items->getFieldDefinition();
   $field_name = $field_definition->getName();
   $field_parents = $form['#parents'];
-  $widget_state = AutoParagraphs::getWidgetState($field_parents, $field_name, $form_state);
+  $widget_state = AutoParagraphsAjaxCallback::getWidgetState($field_parents, $field_name, $form_state);
 
   if (!isset($widget_state['auto_paragraphs'])) {
     // Auto paragraph field isn't set in the widget.
@@ -114,7 +125,7 @@ function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, Fo
   $widget_state['items_count'] = $max;
   $widget_state['real_item_count'] = $max;
 
-  AutoParagraphs::setWidgetState($field_parents, $field_name, $form_state, $widget_state);
+  AutoParagraphsAjaxCallback::setWidgetState($field_parents, $field_name, $form_state, $widget_state);
 
   if ($max > 0) {
     for ($delta = 0; $delta < $max; $delta++) {
@@ -143,7 +154,7 @@ function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, Fo
 
       if ($element) {
         // Set paragraphs bundle.
-        $widget_state = AutoParagraphs::getWidgetState($element['#field_parents'], $field_name, $form_state);
+        $widget_state = AutoParagraphsAjaxCallback::getWidgetState($element['#field_parents'], $field_name, $form_state);
         $element['#paragraphs_bundle'] = $widget_state['paragraphs'][$delta]['entity']->bundle();
 
         // Allow modules to alter the field widget form element.
@@ -183,8 +194,8 @@ function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, Fo
     }
   }
 
-  $field_state = AutoParagraphs::getWidgetState($field_parents, $field_name, $form_state);
+  $field_state = AutoParagraphsAjaxCallback::getWidgetState($field_parents, $field_name, $form_state);
   $field_state['real_item_count'] = $field_state['items_count'];
   $field_state['add_mode'] = $widget->getSetting('add_mode');
-  AutoParagraphs::setWidgetState($field_parents, $field_name, $form_state, $field_state);
+  AutoParagraphsAjaxCallback::setWidgetState($field_parents, $field_name, $form_state, $field_state);
 }

@@ -113,7 +113,6 @@ class AutoParagraphForm extends EntityForm {
       ],
     ];
 
-    $fields = [];
     if (!empty($form_state->getValue('content_type'))) {
       $contentType = $form_state->getValue('content_type');
       $fields = $this->getExistingFieldStorageOptions($contentType);
@@ -143,7 +142,6 @@ class AutoParagraphForm extends EntityForm {
       '#suffix' => '</div>',
     ];
 
-    $options = [];
     if (!empty($form_state->getValue('field'))
       && !empty($form_state->getValue('content_type'))
     ) {
@@ -172,7 +170,6 @@ class AutoParagraphForm extends EntityForm {
       '#suffix' => '</div>',
     ];
 
-    $paragraphFields = [];
     if (!empty($form_state->getValue('content_type'))) {
       $contentType = $form_state->getValue('content_type');
       $paragraphFields = $this->getParargraphFieldOptions($contentType);
@@ -201,7 +198,6 @@ class AutoParagraphForm extends EntityForm {
       '#suffix' => '</div>',
     ];
 
-    $paragraphs = [];
     if (!empty($form_state->getValue('paragraph_field'))
       && !empty($form_state->getValue('content_type'))
     ) {
@@ -273,6 +269,9 @@ class AutoParagraphForm extends EntityForm {
     if (empty($selectedField)) {
       return [];
     }
+
+    // @todo: allow other field types.
+
     // Load the field storage.
     $fieldStorage = $this->entityTypeManager
       ->getStorage('field_storage_config')
@@ -337,6 +336,11 @@ class AutoParagraphForm extends EntityForm {
 
   /**
    * Helper function to check whether an Example configuration entity exists.
+   *
+   * @param $id
+   * @return bool
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function exist($id) {
     $entity = $this->entityTypeManager->getStorage('auto_paragraph')->getQuery()
@@ -345,6 +349,11 @@ class AutoParagraphForm extends EntityForm {
     return (bool) $entity;
   }
 
+  /**
+   * @return array
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
   public function getExistingContentTypes() {
     $types = [];
     $loadedTypes = $this->entityTypeManager->getStorage('node_type')->loadMultiple();
@@ -354,10 +363,15 @@ class AutoParagraphForm extends EntityForm {
     return $types;
   }
 
+  /**
+   * @param $contentType
+   * @return array
+   */
   protected function getExistingFieldStorageOptions($contentType) {
     $bundleFields = [];
     foreach ($this->entityFieldManager->getFieldDefinitions('node', $contentType) as $field_name => $field_definition) {
       if (!empty($field_definition->getTargetBundle())) {
+        // @todo allow for different field types here. maybe even pluginize this?
         if ($field_definition->getType() == 'entity_reference') {
           if ($field_definition->getSetting('target_type') == 'taxonomy_term') {
             $handlerSettings = $field_definition->getSetting('handler_settings');
@@ -375,6 +389,10 @@ class AutoParagraphForm extends EntityForm {
     return $bundleFields;
   }
 
+  /**
+   * @param $contentType
+   * @return array
+   */
   protected function getParargraphFieldOptions($contentType) {
     $bundleParagraphfields = [];
     foreach ($this->entityFieldManager->getFieldDefinitions('node', $contentType) as $field_name => $field_definition) {
@@ -401,9 +419,45 @@ class AutoParagraphForm extends EntityForm {
   {
     parent::validateForm($form, $form_state);
 
-    // @todo : validate the conditions we are generating and ensure we aren't dubling up.
-    // ie, no two rules can act on different paragraph fields.
-    // no two rules can contradict their selected options.
+    // in the same content type.
+    // - no rule can act on the same options as another rule (they should be mutually exclusive)
+    // - no two rules can act between the same field and different paragraph fields
+
+    $autoParagraphsConfigList = \Drupal::service('entity_type.manager')
+      ->getStorage('auto_paragraph')
+      ->getQuery()
+      ->execute();
+    $autoParagraphsConfigEntities = \Drupal::service('entity_type.manager')
+      ->getStorage('auto_paragraph')
+      ->loadMultipleOverrideFree($autoParagraphsConfigList);
+
+    $formId = $form_state->getValue('id');
+    $formContentType = $form_state->getValue('content_type');
+    $formField = $form_state->getValue('field');
+    $formOptions = $form_state->getValue('options');
+    $formParagraphField = $form_state->getValue('paragraph_field');
+
+    foreach ($autoParagraphsConfigEntities as $id => $autoParagraph) {
+      if ($autoParagraph->getId() == $formId) {
+        // Don't compare this to itself.
+        continue;
+      }
+      if ($autoParagraph->getContentType() == $formContentType) {
+        // Content type the same
+        if ($autoParagraph->getField() == $formField) {
+          // field is the same
+          if ($autoParagraph->getParagraphField() != $formParagraphField) {
+            // Two rules in the same field can't act on different paragraphs.
+            $form_state->setErrorByName('paragraph_field', $this->t('There is another rules paragraphsasdas.'));
+            return;
+          }
+          if (count(array_intersect($autoParagraph->getOptions(), $formOptions)) > 0) {
+            $form_state->setErrorByName('options', $this->t('There is another rules options!.'));
+            return;
+          }
+        }
+      }
+    }
   }
 
   /**

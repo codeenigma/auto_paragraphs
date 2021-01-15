@@ -14,8 +14,10 @@ class AutoParagraphListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildHeader() {
-    $header['id'] = $this->t('Machine name');
     $header['label'] = $this->t('Auto Paragraph');
+    $header['content_type'] = $this->t('Content Type');
+    $header['field'] = $this->t('Field');
+    $header['paragraph_field'] = $this->t('Paragraph');
     return $header + parent::buildHeader();
   }
 
@@ -23,11 +25,10 @@ class AutoParagraphListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity) {
-    $row['id'] = $entity->id();
     $row['label'] = $entity->label();
-
-    // You probably want a few more properties here...
-
+    $row['content_type'] = $entity->getContentType();
+    $row['field'] = $entity->getField();
+    $row['paragraph_field'] = $entity->getParagraphField();
     return $row + parent::buildRow($entity);
   }
 
