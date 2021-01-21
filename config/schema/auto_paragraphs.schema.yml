@@ -1,4 +1,4 @@
-auto_paragraphs.settings:*:
+auto_paragraphs.auto_paragraph.*:
   type: config_entity
   label: 'Auto Paragraph'
   mapping:
@@ -19,11 +19,13 @@ auto_paragraphs.settings:*:
       label: 'Paragraph Field'
     options:
       type: sequence
+      label: 'Options'
       sequence:
-        type: mapping
-        mapping:
-          condition:
-            type: string
-            label: 'Condition'
-          padagraphs:
-            type: sequence
+        type: string
+        label: 'Condition'
+    paragraphs:
+      type: sequence
+      label: 'Paragraphs'
+      sequence:
+        type: string
+        label: 'Paragraph'
