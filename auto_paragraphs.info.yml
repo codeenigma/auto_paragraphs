@@ -1,7 +1,7 @@
 name: Auto Paragraphs
 type: module
 description: Automatically inject paragraphs into nodes depending on selection of fields.
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^9 || ^10
 configure: entity.auto_paragraph.collection
 
 dependencies:

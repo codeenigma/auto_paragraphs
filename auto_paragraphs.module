@@ -79,7 +79,7 @@ function auto_paragraphs_form_node_form_alter(&$form, \Drupal\Core\Form\FormStat
 /**
  * Implements hook_field_widget_multivalue_form_alter().
  */
-function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, FormStateInterface $form_state, array $context)
+function auto_paragraphs_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context)
 {
   /** @var \Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget $widget */
   $widget = $context['widget'];
@@ -106,7 +106,7 @@ function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, Fo
   $field_title = $field_definition->getLabel();
   $description = FieldFilteredMarkup::create(\Drupal::token()->replace($field_definition->getDescription()));
 
-  $max = $widget_state['real_item_count'];
+  $max = 0;//$widget_state['real_item_count'];
   $entity_type_manager = \Drupal::entityTypeManager();
   $target_type = $field_definition->getSetting('target_type');
 
@@ -190,7 +190,7 @@ function auto_paragraphs_field_widget_multivalue_form_alter(array &$elements, Fo
         if (isset($element['#access']) && !$element['#access']) {
           $widget_state['items_count']--;
         } else {
-          $elements[$delta] = $element;
+          $field_widget_complete_form['widget'][$delta] = $element;
         }
       }
     }

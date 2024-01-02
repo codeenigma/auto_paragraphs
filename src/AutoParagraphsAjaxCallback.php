@@ -32,8 +32,6 @@ class AutoParagraphsAjaxCallback
         $paragraphFieldName = $autoParagraphConfig['paragraph_field'];
         $autoParagraphFieldName = $autoParagraphConfig['field'];
 
-        $paragraphFields[] = $paragraphFieldName;
-
         $inputs = $form_state->getUserInput();
 
         $autoParagraphFieldInput = $inputs[$autoParagraphFieldName];
@@ -78,8 +76,7 @@ class AutoParagraphsAjaxCallback
    * @param FormStateInterface $form_state
    * @return array|mixed|null
    */
-  public static function addMoreAjax(array $form, FormStateInterface $form_state)
-  {
+  public static function addMoreAjax(array $form, FormStateInterface $form_state) {
     $state = $form_state->getStorage();
     $configs = $state['auto_paragraphs_configs'];
 
