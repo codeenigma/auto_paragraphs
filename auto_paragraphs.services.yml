@@ -2,4 +2,3 @@ services:
   auto_paragraphs:
     class: Drupal\auto_paragraphs\AutoParagraphs
     arguments: []
-

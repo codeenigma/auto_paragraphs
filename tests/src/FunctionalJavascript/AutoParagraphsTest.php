@@ -9,7 +9,7 @@ use Drupal\Tests\paragraphs\FunctionalJavascript\ParagraphsTestBaseTrait;
 use Drupal\Tests\paragraphs\Traits\ParagraphsCoreVersionUiTestTrait;
 
 /**
- * Class AutoParagraphsTest
+ * Web tests for the auto_paragraphs module.
  *
  * @group auto_paragraphs
  */
@@ -32,7 +32,7 @@ class AutoParagraphsTest extends WebDriverTestBase {
     'field_ui',
     'block',
     'link',
-    'auto_paragraphs'
+    'auto_paragraphs',
   ];
 
   /**
@@ -46,8 +46,6 @@ class AutoParagraphsTest extends WebDriverTestBase {
   public function testAddWidgetButton() {
     $this->addParagraphedContentType('paragraphed_test');
     $this->loginAsAdmin([
-      'administer content types',
-      'administer node form display',
       'edit any paragraphed_test content',
       'create paragraphed_test content',
     ]);
@@ -58,20 +56,12 @@ class AutoParagraphsTest extends WebDriverTestBase {
     $paragraph_type = 'detail';
     $this->addParagraphsType($paragraph_type);
 
-    // Add a text field to the detail type.
-    $this->drupalGet('admin/structure/paragraphs_type/' . $paragraph_type . '/fields/add-field');
-    $page->selectFieldOption('new_storage_type', 'text_long');
-    $page->fillField('label', 'Text');
-    $this->assertSession()->waitForElementVisible('css', '#edit-name-machine-name-suffix .link');
-    $page->pressButton('Edit');
-    $page->fillField('field_name', 'text');
-    $page->pressButton('Save and continue');
-
     $this->drupalGet('node/add/paragraphed_test');
 
-    // Inject paragraphs
+    // Inject paragraphs.
     $page->pressButton('Inject Paragraphs');
 
     $this->assertSession()->assertWaitOnAjaxRequest();
   }
+
 }

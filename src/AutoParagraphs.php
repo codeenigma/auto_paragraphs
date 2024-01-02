@@ -2,14 +2,9 @@
 
 namespace Drupal\auto_paragraphs;
 
-use Drupal\Component\Utility\NestedArray;
-use Drupal\Core\Field\FieldStorageDefinitionInterface;
-use Drupal\Core\Form\FormStateInterface;
-
 /**
- * Class AutoParagraphs.
+ * The auto_paragraphs service class.
  */
-class AutoParagraphs implements AutoParagraphsInterface
-{
+class AutoParagraphs implements AutoParagraphsInterface {
 
 }

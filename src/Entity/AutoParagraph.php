@@ -3,7 +3,6 @@
 namespace Drupal\auto_paragraphs\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
-use Drupal\auto_paragraphs\Entity\AutoParagraphInterface;
 
 /**
  * Defines the Example entity.
@@ -97,114 +96,142 @@ class AutoParagraph extends ConfigEntityBase implements AutoParagraphInterface {
   protected $paragraphs;
 
   /**
+   * Get the ID.
+   *
    * @return string
+   *   The ID.
    */
-  public function getId(): string
-  {
+  public function getId(): string {
     return $this->id;
   }
 
   /**
+   * Set the ID.
+   *
    * @param string $id
+   *   The ID.
    */
-  public function setId(string $id): void
-  {
+  public function setId(string $id): void {
     $this->id = $id;
   }
 
   /**
+   * Get the label.
+   *
    * @return string
+   *   The label.
    */
-  public function getLabel(): string
-  {
+  public function getLabel(): string {
     return $this->label;
   }
 
   /**
+   * Set the lavel.
+   *
    * @param string $label
+   *   The label.
    */
-  public function setLabel(string $label): void
-  {
+  public function setLabel(string $label): void {
     $this->label = $label;
   }
 
   /**
-   * @return mixed
+   * Get the content type.
+   *
+   * @return string
+   *   The content type.
    */
-  public function getContentType()
-  {
+  public function getContentType() {
     return $this->content_type;
   }
 
   /**
-   * @param mixed $content_type
+   * Set the content type.
+   *
+   * @param string $content_type
+   *   The content type.
    */
-  public function setContentType($content_type): void
-  {
+  public function setContentType($content_type): void {
     $this->content_type = $content_type;
   }
 
   /**
+   * Get the field.
+   *
    * @return mixed
+   *   The field.
    */
-  public function getField()
-  {
+  public function getField() {
     return $this->field;
   }
 
   /**
+   * Set the field.
+   *
    * @param mixed $field
+   *   The field.
    */
-  public function setField($field): void
-  {
+  public function setField($field): void {
     $this->field = $field;
   }
 
   /**
+   * Get the options.
+   *
    * @return mixed
+   *   The options.
    */
-  public function getOptions()
-  {
+  public function getOptions() {
     return $this->options;
   }
 
   /**
+   * Set the options.
+   *
    * @param mixed $options
+   *   The options.
    */
-  public function setOptions($options): void
-  {
+  public function setOptions($options): void {
     $this->options = $options;
   }
 
   /**
-   * @return mixed
+   * Get the paragraph field.
+   *
+   * @return string
+   *   The paragraph field
    */
-  public function getParagraphField()
-  {
+  public function getParagraphField() {
     return $this->paragraph_field;
   }
 
   /**
-   * @param mixed $paragraph_field
+   * Set the paragraph field.
+   *
+   * @param string $paragraph_field
+   *   The paragraph field.
    */
-  public function setParagraphField($paragraph_field): void
-  {
+  public function setParagraphField($paragraph_field): void {
     $this->paragraph_field = $paragraph_field;
   }
 
   /**
-   * @return mixed
+   * Get the paragraphs.
+   *
+   * @return array
+   *   The paragraphs.
    */
-  public function getParagraphs()
-  {
+  public function getParagraphs() {
     return $this->paragraphs;
   }
 
   /**
-   * @param mixed $paragraphs
+   * Set the paragraphs.
+   *
+   * @param array $paragraphs
+   *   The paragraphs.
    */
-  public function setParagraphs($paragraphs): void
-  {
+  public function setParagraphs($paragraphs): void {
     $this->paragraphs = $paragraphs;
   }
 

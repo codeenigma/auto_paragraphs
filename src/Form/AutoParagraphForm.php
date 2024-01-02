@@ -1,17 +1,14 @@
 <?php
+
 namespace Drupal\auto_paragraphs\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityForm;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Render\RendererInterface;
-use Drupal\field\FieldStorageConfigInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -43,8 +40,6 @@ class AutoParagraphForm extends EntityForm {
   /**
    * Constructs an AutoParagraphForm object.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   The entityTypeManager.
    * @param \Drupal\Core\Field\FieldTypePluginManagerInterface $field_type_plugin_manager
    *   The field type plugin manager.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface|null $entity_field_manager
@@ -52,8 +47,7 @@ class AutoParagraphForm extends EntityForm {
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The render object.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, FieldTypePluginManagerInterface $field_type_plugin_manager, EntityFieldManagerInterface $entity_field_manager, RendererInterface $renderer) {
-    $this->entityTypeManager = $entityTypeManager;
+  public function __construct(FieldTypePluginManagerInterface $field_type_plugin_manager, EntityFieldManagerInterface $entity_field_manager, RendererInterface $renderer) {
     $this->fieldTypePluginManager = $field_type_plugin_manager;
     $this->entityFieldManager = $entity_field_manager;
     $this->renderer = $renderer;
@@ -63,12 +57,15 @@ class AutoParagraphForm extends EntityForm {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('entity_type.manager'),
+    $instance = new self(
       $container->get('plugin.manager.field.field_type'),
       $container->get('entity_field.manager'),
       $container->get('renderer')
     );
+
+    $instance->setEntityTypeManager($container->get('entity_type.manager'));
+
+    return $instance;
   }
 
   /**
@@ -101,7 +98,7 @@ class AutoParagraphForm extends EntityForm {
       '#type' => 'machine_name',
       '#default_value' => $autoParagraphEntity->id(),
       '#machine_name' => [
-        'exists' => [$this, 'exist'],
+        'exists' => [$this, 'autoParagraphExists'],
       ],
       '#disabled' => !$autoParagraphEntity->isNew(),
     ];
@@ -243,23 +240,21 @@ class AutoParagraphForm extends EntityForm {
    * Ajax callback for the auto_paragraph creation form.
    *
    * @param array $form
-   * @param FormStateInterface $form_state
-   * @return AjaxResponse
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The curent form state.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The ajax response.
    */
   public function formDropdownCallback(array $form, FormStateInterface $form_state) {
     $form_state->setRebuild(TRUE);
 
     $response = new AjaxResponse();
-    //$fieldField = $this->renderer->renderRoot($form['field']);
+
     $response->addCommand(new ReplaceCommand('#field-replace', $form['field']));
-
-    //$optionsField = $this->renderer->renderRoot($form['options']);
     $response->addCommand(new ReplaceCommand('#options-replace', $form['options']));
-
-    //$paragraphFieldField = $this->renderer->renderRoot($form['paragraph_field']);
     $response->addCommand(new ReplaceCommand('#paragraph-field-replace', $form['paragraph_field']));
-
-    //$paragraphsField = $this->renderer->renderRoot($form['paragraphs']);
     $response->addCommand(new ReplaceCommand('#paragraphs-replace', $form['paragraphs']));
 
     return $response;
@@ -268,9 +263,14 @@ class AutoParagraphForm extends EntityForm {
   /**
    * Get options for field.
    *
-   * @param $selectedField
-   * @param $contentType
+   * @param string $selectedField
+   *   The selected field.
+   * @param string $contentType
+   *   The content type.
+   *
    * @return array
+   *   The options for the field.
+   *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
@@ -279,15 +279,14 @@ class AutoParagraphForm extends EntityForm {
       return [];
     }
 
-    // @todo: allow other field types.
-
+    // @todo allow other field types.
     // Load the field storage.
     $fieldStorage = $this->entityTypeManager
       ->getStorage('field_storage_config')
       ->load('node.' . $selectedField);
 
-    // We need to create a blank content type in order to be able to fetch the needed widget configurations for that
-    // entity type.
+    // We need to create a blank content type in order to be able to fetch
+    // the needed widget configurations for that entity type.
     $node = $this->entityTypeManager
       ->getStorage('node')
       ->create(['type' => $contentType]);
@@ -302,9 +301,14 @@ class AutoParagraphForm extends EntityForm {
   /**
    * Get paragraph bundles for field.
    *
-   * @param $paragraphField
-   * @param $contentType
+   * @param string $paragraphField
+   *   The paragraph field.
+   * @param string $contentType
+   *   The content type.
+   *
    * @return array|mixed
+   *   Get the available paragraph bundles for this field.
+   *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
@@ -346,12 +350,16 @@ class AutoParagraphForm extends EntityForm {
   /**
    * Helper function to check whether an Example configuration entity exists.
    *
-   * @param $id
+   * @param string $id
+   *   The auto_paragraph configuration name.
+   *
    * @return bool
+   *   True if the auto_paragraph entity exists.
+   *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function exist($id) {
+  public function autoParagraphExists($id) {
     $entity = $this->entityTypeManager->getStorage('auto_paragraph')->getQuery()
       ->condition('id', $id)
       ->execute();
@@ -359,7 +367,11 @@ class AutoParagraphForm extends EntityForm {
   }
 
   /**
+   * Get a list of the available content types.
+   *
    * @return array
+   *   The list of content types.
+   *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
@@ -373,8 +385,13 @@ class AutoParagraphForm extends EntityForm {
   }
 
   /**
-   * @param $contentType
+   * Get the existing field storage options.
+   *
+   * @param string $contentType
+   *   The content type.
+   *
    * @return array
+   *   The field storage options.
    */
   protected function getExistingFieldStorageOptions($contentType) {
     $bundleFields = [];
@@ -399,8 +416,13 @@ class AutoParagraphForm extends EntityForm {
   }
 
   /**
-   * @param $contentType
+   * Get the paragraph field options for this content type.
+   *
+   * @param string $contentType
+   *   The content type.
+   *
    * @return array
+   *   The list of paragraph fields.
    */
   protected function getParargraphFieldOptions($contentType) {
     $bundleParagraphfields = [];
@@ -421,22 +443,21 @@ class AutoParagraphForm extends EntityForm {
   }
 
   /**
-   * @param array $form
-   * @param FormStateInterface $form_state
+   * {@inheritDoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state)
-  {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
 
-    // in the same content type.
-    // - no rule can act on the same options as another rule (they should be mutually exclusive)
-    // - no two rules can act between the same field and different paragraph fields
-
-    $autoParagraphsConfigList = \Drupal::service('entity_type.manager')
+    // In the same content type.
+    // - no rule can act on the same options as another rule (they should be
+    //   mutually exclusive)
+    // - no two rules can act between the same field and different paragraph
+    //   fields.
+    $autoParagraphsConfigList = $this->entityTypeManager
       ->getStorage('auto_paragraph')
       ->getQuery()
       ->execute();
-    $autoParagraphsConfigEntities = \Drupal::service('entity_type.manager')
+    $autoParagraphsConfigEntities = $this->entityTypeManager
       ->getStorage('auto_paragraph')
       ->loadMultipleOverrideFree($autoParagraphsConfigList);
 
@@ -446,15 +467,15 @@ class AutoParagraphForm extends EntityForm {
     $formOptions = $form_state->getValue('options');
     $formParagraphField = $form_state->getValue('paragraph_field');
 
-    foreach ($autoParagraphsConfigEntities as $id => $autoParagraph) {
+    foreach ($autoParagraphsConfigEntities as $autoParagraph) {
       if ($autoParagraph->getId() == $formId) {
         // Don't compare this to itself.
         continue;
       }
       if ($autoParagraph->getContentType() == $formContentType) {
-        // Content type the same
+        // Content type the same.
         if ($autoParagraph->getField() == $formField) {
-          // field is the same
+          // Field is the same.
           if ($autoParagraph->getParagraphField() != $formParagraphField) {
             // Two rules in the same field can't act on different paragraphs.
             $form_state->setErrorByName('paragraph_field', $this->t('There is another rules paragraphsasdas.'));
@@ -470,8 +491,7 @@ class AutoParagraphForm extends EntityForm {
   }
 
   /**
-   * @param array $form
-   * @param FormStateInterface $form_state
+   * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $trigger = (string) $form_state->getTriggeringElement()['#value'];
@@ -488,4 +508,5 @@ class AutoParagraphForm extends EntityForm {
       $form_state->setRebuild(TRUE);
     }
   }
+
 }

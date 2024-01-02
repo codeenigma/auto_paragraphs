@@ -3,21 +3,22 @@
 namespace Drupal\auto_paragraphs;
 
 use Drupal\Component\Utility\NestedArray;
-use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Class AutoParagraphsAjaxCallback.
+ * Handles the Ajax callback for the auto paragraphs module.
  */
-class AutoParagraphsAjaxCallback
-{
+class AutoParagraphsAjaxCallback {
 
   /**
+   * The submit handler for the add more button.
+   *
    * @param array $form
-   * @param FormStateInterface $form_state
+   *   The form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
    */
-  public static function addMoreSubmit(array $form, FormStateInterface $form_state)
-  {
+  public static function addMoreSubmit(array $form, FormStateInterface $form_state) {
     $state = $form_state->getStorage();
     $configs = $state['auto_paragraphs_configs'];
 
@@ -58,9 +59,11 @@ class AutoParagraphsAjaxCallback
       foreach ($paragraphsToAdd as $paragraphToAdd) {
         $widget_state['auto_paragraphs'][] = $paragraphToAdd;
 
-        // @todo: Add this code to prevent overloading paragraph fields.
-        // if ($widget_state['real_item_count'] < $element['#cardinality'] || $element['#cardinality'] == FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED) {
-        //   $widget_state['items_count'] += $howMany;
+        // @todo Add this code to prevent overloading paragraph fields.
+        // if ($widget_state['real_item_count'] < $element['#cardinality'] ||
+        // $element['#cardinality'] ==
+        // FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED) {
+        // $widget_state['items_count'] += $howMany;
         // }
         $widget_state['items_count']++;
       }
@@ -72,9 +75,15 @@ class AutoParagraphsAjaxCallback
   }
 
   /**
+   * Ajax callback for the add more button.
+   *
    * @param array $form
-   * @param FormStateInterface $form_state
+   *   The form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   *
    * @return array|mixed|null
+   *   The updated element.
    */
   public static function addMoreAjax(array $form, FormStateInterface $form_state) {
     $state = $form_state->getStorage();
@@ -91,8 +100,8 @@ class AutoParagraphsAjaxCallback
 
     $element = NestedArray::getValue($form, [$paragraphFieldName, 'widget']);
     $delta = $element['#max_delta'];
-    $element[$delta]['#prefix'] = '<div class="ajax-new-content">' . (isset($element[$delta]['#prefix']) ? $element[$delta]['#prefix'] : '');
-    $element[$delta]['#suffix'] = (isset($element[$delta]['#suffix']) ? $element[$delta]['#suffix'] : '') . '</div>';
+    $element[$delta]['#prefix'] = '<div class="ajax-new-content">' . ($element[$delta]['#prefix'] ?? '');
+    $element[$delta]['#suffix'] = ($element[$delta]['#suffix'] ?? '') . '</div>';
 
     // Clear the Add more delta.
     NestedArray::setValue(
@@ -105,25 +114,41 @@ class AutoParagraphsAjaxCallback
   }
 
   /**
+   * Get the widget state.
+   *
    * @param array $parents
-   * @param $field_name
-   * @param FormStateInterface $form_state
+   *   The parents.
+   * @param string $field_name
+   *   The field name.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   *
    * @return array|mixed|null
+   *   The widget state.
    */
-  public static function getWidgetState(array $parents, $field_name, FormStateInterface $form_state)
-  {
-    return NestedArray::getValue($form_state->getStorage(), array_merge(['field_storage', '#parents'], $parents, ['#fields', $field_name]));
+  public static function getWidgetState(array $parents, $field_name, FormStateInterface $form_state) {
+    return NestedArray::getValue(
+      $form_state->getStorage(),
+      array_merge(['field_storage', '#parents'], $parents, ['#fields', $field_name]));
   }
 
   /**
+   * Set the widget state.
+   *
    * @param array $parents
-   * @param $field_name
-   * @param FormStateInterface $form_state
+   *   The parents.
+   * @param string $field_name
+   *   The field name.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
    * @param array $field_state
+   *   The field state.
    */
-  public static function setWidgetState(array $parents, $field_name, FormStateInterface $form_state, array $field_state)
-  {
-    NestedArray::setValue($form_state->getStorage(), array_merge(['field_storage', '#parents'], $parents, ['#fields', $field_name]), $field_state);
+  public static function setWidgetState(array $parents, $field_name, FormStateInterface $form_state, array $field_state) {
+    NestedArray::setValue(
+      $form_state->getStorage(),
+      array_merge(['field_storage', '#parents'], $parents, ['#fields', $field_name]),
+      $field_state);
   }
 
 }

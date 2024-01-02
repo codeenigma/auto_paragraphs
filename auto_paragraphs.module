@@ -1,19 +1,23 @@
 <?php
 
-use Drupal\Component\Utility\NestedArray;
-use Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget;
-use Drupal\paragraphs\Plugin\Field\FieldWidget\InlineParagraphsWidget;
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\auto_paragraphs\AutoParagraphs;
+/**
+ * @file
+ * The module file for the auto_paragraphs module.
+ */
+
 use Drupal\auto_paragraphs\AutoParagraphsAjaxCallback;
-use Drupal\Core\Field\FieldFilteredMarkup;
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
+use Drupal\Core\Field\FieldFilteredMarkup;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\paragraphs\Plugin\Field\FieldWidget\InlineParagraphsWidget;
+use Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget;
 
 /**
- * Implements hook_form_alter().
+ * Implements hook_form_FORM_ID_alter().
  */
-function auto_paragraphs_form_node_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
-  // @todo : remove the form element from the node page if the node has been created.
+function auto_paragraphs_form_node_form_alter(&$form, FormStateInterface $form_state) {
+  // @todo remove the form element from the node page if the node has been created.
   $contentEntity = $form_state->getFormObject()->getEntity();
   if ($contentEntity->isNew() === FALSE) {
     // Don't activate the module if the content type is already created.
@@ -49,8 +53,7 @@ function auto_paragraphs_form_node_form_alter(&$form, \Drupal\Core\Form\FormStat
 
     $autoParagraphField = NestedArray::getValue($form, [$autoParagraphFieldName]);
 
-    // @todo: check for the field not existing.
-
+    // @todo check for the field not existing.
     $autoParagraphField['auto_paragraphs'] = [
       '#type' => 'submit',
       '#name' => $autoParagraphFieldName . '_auto_paragraph',
@@ -64,7 +67,7 @@ function auto_paragraphs_form_node_form_alter(&$form, \Drupal\Core\Form\FormStat
         'effect' => 'fade',
         'progress' => [
           'type' => 'fullscreen',
-        ]
+        ],
       ],
     ];
     NestedArray::setValue($form, [$autoParagraphFieldName], $autoParagraphField);
@@ -77,10 +80,9 @@ function auto_paragraphs_form_node_form_alter(&$form, \Drupal\Core\Form\FormStat
 }
 
 /**
- * Implements hook_field_widget_multivalue_form_alter().
+ * Implements hook_field_widget_complete_form_alter().
  */
-function auto_paragraphs_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context)
-{
+function auto_paragraphs_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context) {
   /** @var \Drupal\paragraphs\Plugin\Field\FieldWidget\ParagraphsWidget $widget */
   $widget = $context['widget'];
   if (!$widget instanceof ParagraphsWidget && !$widget instanceof InlineParagraphsWidget) {
@@ -102,15 +104,17 @@ function auto_paragraphs_field_widget_complete_form_alter(&$field_widget_complet
   }
 
   $is_multiple = $field_definition->getFieldStorageDefinition()->isMultiple();
-  $cardinality = $field_definition->getFieldStorageDefinition()->getCardinality();
+  // @todo Think about cardinality
+  // $field_definition->getFieldStorageDefinition()->getCardinality();
   $field_title = $field_definition->getLabel();
   $description = FieldFilteredMarkup::create(\Drupal::token()->replace($field_definition->getDescription()));
 
-  $max = 0;//$widget_state['real_item_count'];
+  // $widget_state['real_item_count'];
+  $max = 0;
   $entity_type_manager = \Drupal::entityTypeManager();
   $target_type = $field_definition->getSetting('target_type');
 
-  foreach ($widget_state['auto_paragraphs'] as $key => $type) {
+  foreach ($widget_state['auto_paragraphs'] as $type) {
     $item_values = [
       'type' => $type,
     ];
@@ -165,7 +169,7 @@ function auto_paragraphs_field_widget_complete_form_alter(&$field_widget_complet
           'widget' => $widget,
           'items' => $items,
           'delta' => $delta,
-          'default' => (bool)$form_state->get('default_value_widget'),
+          'default' => (bool) $form_state->get('default_value_widget'),
         ];
         \Drupal::moduleHandler()->alter(['field_widget_form', 'field_widget_' . $widget->getPluginId() . '_form'], $element, $form_state, $context);
 
@@ -173,15 +177,15 @@ function auto_paragraphs_field_widget_complete_form_alter(&$field_widget_complet
         if ($is_multiple) {
           // We name the element '_weight' to avoid clashing with elements
           // defined by widget.
-          $element['_weight'] = array(
+          $element['_weight'] = [
             '#type' => 'weight',
-            '#title' => t('Weight for row @number', array('@number' => $delta + 1)),
+            '#title' => t('Weight for row @number', ['@number' => $delta + 1]),
             '#title_display' => 'invisible',
             // Note: this 'delta' is the FAPI #type 'weight' element's property.
             '#delta' => $max,
             '#default_value' => $items[$delta]->_weight ?: $delta,
             '#weight' => 100,
-          );
+          ];
         }
 
         // Access for the top element is set to FALSE only when the paragraph
@@ -189,7 +193,8 @@ function auto_paragraphs_field_widget_complete_form_alter(&$field_widget_complet
         // lower level.
         if (isset($element['#access']) && !$element['#access']) {
           $widget_state['items_count']--;
-        } else {
+        }
+        else {
           $field_widget_complete_form['widget'][$delta] = $element;
         }
       }
